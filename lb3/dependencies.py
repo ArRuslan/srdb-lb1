@@ -1,7 +1,7 @@
 from aioodbc import Connection
 from fastapi import Depends
 
-from lb3.db import DatabasePool
+from .db import DatabasePool
 
 
 async def db_connection() -> Connection:

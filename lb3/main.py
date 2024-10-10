@@ -4,8 +4,8 @@ from os import environ
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from lb3 import api, ui
-from lb3.db import DatabasePool
+from . import api, ui
+from .db import DatabasePool
 
 
 @asynccontextmanager
