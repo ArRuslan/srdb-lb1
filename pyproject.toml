@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "srdb-lb3"
+version = "0.1.0"
+description = ""
+authors = ["RuslanUC <dev_ruslan_uc@protonmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.115.0"
+pydantic = "^2.9.2"
+fastui = "^0.7.0"
+uvicorn = "^0.31.0"
+aioodbc = "^0.5.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
