@@ -69,7 +69,7 @@ async def edit_group(group_id: int, data: CreateGroupBody, conn=DbConnectionDep)
 
 
 @router.get("/groups/{group_id}/schedule")
-async def get_group_schedule_month(group_id: int, conn=DbConnectionDep):
+async def get_group_schedule_for_current_month(group_id: int, conn=DbConnectionDep):
     result = []
 
     # TODO: replace with procedure or view that returns schedule for current month instead of calculating date here
@@ -79,16 +79,29 @@ async def get_group_schedule_month(group_id: int, conn=DbConnectionDep):
     cur: Cursor
     async with conn.cursor() as cur:
         await cur.execute(
-            "SELECT id, teacher_id, subject_id, [date], position, [type] "
-            "FROM schedule_item WHERE group_id=? AND date >= ? AND date <= ? ORDER BY [date];",
+            "SELECT si.id, si.teacher_id, t.first_name, t.last_name, si.subject_id, sj.name, sj.short_name, "
+            "si.[date], si.position, si.[type] "
+            "FROM schedule_item si "
+            "INNER JOIN teacher t ON t.id = si.teacher_id "
+            "INNER JOIN subject sj ON sj.id = si.subject_id "
+            "WHERE group_id=? AND date >= ? AND date <= ? ORDER BY [date];",
             group_id, from_date, to_date
         )
         while (row := await cur.fetchone()) is not None:
-            schedule_item_id, teacher_id, subject_id, date_, position, type_ = row
+            schedule_item_id, teacher_id, teacher_first_name, teacher_last_name, subject_id, subject_name, \
+                subject_short_name, date_, position, type_ = row
             result.append({
                 "id": schedule_item_id,
-                "teacher_id": teacher_id,  # TODO: replace with name
-                "subject_id": subject_id,  # TODO: replace with name
+                "teacher": {
+                    "id": teacher_id,
+                    "first_name": teacher_first_name,
+                    "last_name": teacher_last_name,
+                },
+                "subject": {
+                    "id": subject_id,
+                    "name": subject_name,
+                    "short_name": subject_short_name,
+                },
                 "date": date_.isoformat(),
                 "position": position,
                 "type": type_,
