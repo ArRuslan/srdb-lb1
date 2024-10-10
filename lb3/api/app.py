@@ -1,10 +1,10 @@
 from datetime import date, timedelta
 
 from aioodbc import Cursor
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ..dependencies import DbConnectionDep
+from ..dependencies import DbConnectionDep, GroupMustExistDep, SubjectMustExistDep, TeacherMustExistDep
 
 router = APIRouter(prefix="/api")
 
@@ -57,7 +57,7 @@ async def create_group(data: CreateGroupBody, conn=DbConnectionDep):
     }
 
 
-@router.patch("/groups/{group_id}")
+@router.patch("/groups/{group_id}", dependencies=[GroupMustExistDep])
 async def edit_group(group_id: int, data: CreateGroupBody, conn=DbConnectionDep):
     async with conn.cursor() as cur:
         await cur.execute("UPDATE [group] SET name=? WHERE id=?;", data.name, group_id)
@@ -68,7 +68,8 @@ async def edit_group(group_id: int, data: CreateGroupBody, conn=DbConnectionDep)
     }
 
 
-@router.get("/groups/{group_id}/schedule")
+# TODO: add learning hours per week/month calculation (as function?)
+@router.get("/groups/{group_id}/schedule", dependencies=[GroupMustExistDep])
 async def get_group_schedule_for_current_month(group_id: int, conn=DbConnectionDep):
     result = []
 
@@ -148,7 +149,7 @@ async def create_subject(data: CreateSubjectBody, conn=DbConnectionDep):
     }
 
 
-@router.patch("/subjects/{subject_id}")
+@router.patch("/subjects/{subject_id}", dependencies=[SubjectMustExistDep])
 async def edit_subject(subject_id: int, data: CreateSubjectBody, conn=DbConnectionDep):
     async with conn.cursor() as cur:
         await cur.execute("UPDATE subject SET name=?, short_name=? WHERE id=?;", data.name, data.short_name, subject_id)
@@ -201,7 +202,7 @@ async def create_teacher(data: CreateTeacherBody, conn=DbConnectionDep):
     }
 
 
-@router.patch("/teachers/{teacher_id}")
+@router.patch("/teachers/{teacher_id}", dependencies=[TeacherMustExistDep])
 async def edit_teacher(teacher_id: int, data: CreateTeacherBody, conn=DbConnectionDep):
     async with conn.cursor() as cur:
         await cur.execute(
