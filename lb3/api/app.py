@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from aioodbc import Cursor
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -64,6 +66,35 @@ async def edit_group(group_id: int, data: CreateGroupBody, conn=DbConnectionDep)
         "id": group_id,
         "name": data.name,
     }
+
+
+@router.get("/groups/{group_id}/schedule")
+async def get_group_schedule_month(group_id: int, conn=DbConnectionDep):
+    result = []
+
+    # TODO: replace with procedure or view that returns schedule for current month instead of calculating date here
+    from_date = date.today().replace(day=1)
+    to_date = (date.today().replace(day=28) + timedelta(days=4)).replace(day=1) + timedelta(days=-1)
+
+    cur: Cursor
+    async with conn.cursor() as cur:
+        await cur.execute(
+            "SELECT id, teacher_id, subject_id, [date], position, [type] "
+            "FROM schedule_item WHERE group_id=? AND date >= ? AND date <= ? ORDER BY [date];",
+            group_id, from_date, to_date
+        )
+        while (row := await cur.fetchone()) is not None:
+            schedule_item_id, teacher_id, subject_id, date_, position, type_ = row
+            result.append({
+                "id": schedule_item_id,
+                "teacher_id": teacher_id,  # TODO: replace with name
+                "subject_id": subject_id,  # TODO: replace with name
+                "date": date_.isoformat(),
+                "position": position,
+                "type": type_,
+            })
+
+    return result
 
 
 @router.get("/subjects")

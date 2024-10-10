@@ -10,7 +10,7 @@ from .db import DatabasePool
 
 @asynccontextmanager
 async def lifespan(_):
-    DatabasePool(
+    db = DatabasePool(
         f"Driver=/opt/microsoft/msodbcsql18/lib64/libmsodbcsql-18.4.so.1.1;"
         f"Server=127.0.0.1;"
         f"Database=nure_lb2;"
@@ -18,6 +18,8 @@ async def lifespan(_):
         f"PWD={environ['DB_PASSWORD']};"
         f"TrustServerCertificate=yes;"
     )
+    #async with db.acquire():
+    #    ...  # TODO: create (if not exists) functions, procedures, etc.
     yield
 
 
