@@ -57,6 +57,18 @@ async def create_group(data: CreateGroupBody, conn=DbConnectionDep):
     }
 
 
+@router.get("/groups/{group_id}", dependencies=[GroupMustExistDep])
+async def get_group(group_id: int, conn=DbConnectionDep):
+    async with conn.cursor() as cur:
+        await cur.execute("SELECT name FROM [group] WHERE id=?;", group_id)
+        name = (await cur.fetchone())[0]
+
+    return {
+        "id": group_id,
+        "name": name,
+    }
+
+
 @router.patch("/groups/{group_id}", dependencies=[GroupMustExistDep])
 async def edit_group(group_id: int, data: CreateGroupBody, conn=DbConnectionDep):
     async with conn.cursor() as cur:
@@ -149,6 +161,19 @@ async def create_subject(data: CreateSubjectBody, conn=DbConnectionDep):
     }
 
 
+@router.get("/subjects/{subject_id}", dependencies=[SubjectMustExistDep])
+async def get_subject(subject_id: int, conn=DbConnectionDep):
+    async with conn.cursor() as cur:
+        await cur.execute("SELECT name, short_name FROM subject WHERE id=?;", subject_id)
+        name, short_name = await cur.fetchone()
+
+    return {
+        "id": subject_id,
+        "name": name,
+        "short_name": short_name,
+    }
+
+
 @router.patch("/subjects/{subject_id}", dependencies=[SubjectMustExistDep])
 async def edit_subject(subject_id: int, data: CreateSubjectBody, conn=DbConnectionDep):
     async with conn.cursor() as cur:
@@ -199,6 +224,20 @@ async def create_teacher(data: CreateTeacherBody, conn=DbConnectionDep):
         "first_name": data.first_name,
         "last_name": data.last_name,
         "info": None,
+    }
+
+
+@router.get("/teachers/{teacher_id}", dependencies=[TeacherMustExistDep])
+async def get_teacher(teacher_id: int, conn=DbConnectionDep):
+    async with conn.cursor() as cur:
+        await cur.execute("SELECT first_name, last_name, info FROM teacher WHERE id=?;", teacher_id)
+        first_name, last_name, info = await cur.fetchone()
+
+    return {
+        "id": teacher_id,
+        "first_name": first_name,
+        "last_name": last_name,
+        "info": info,
     }
 
 
