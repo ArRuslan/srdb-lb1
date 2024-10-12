@@ -24,5 +24,27 @@ BEGIN
     WHERE si.group_id = @group_id AND [date] >= DATEFROMPARTS(YEAR(@current_date), MONTH(@current_date), 1) AND [date] <= EOMONTH(@current_date) ORDER BY [date];
 
     RETURN;
-END
+END;
+```
+
+```tsql
+DROP PROCEDURE IF EXISTS create_schedule_item;
+CREATE PROCEDURE create_schedule_item 
+	@group_id BIGINT, 
+	@teacher_id BIGINT, 
+	@subject_id BIGINT, 
+	@date DATE, 
+	@position TINYINT, 
+	@type VARCHAR(32)
+AS
+BEGIN
+	IF EXISTS (SELECT * FROM schedule_item WHERE group_id = @group_id AND teacher_id = @teacher_id AND subject_id = @subject_id AND [date] = @date AND [position] = @position)
+	BEGIN
+		THROW 50001, 'The schedule with this parameters already exist.', 1;
+	END
+	
+	INSERT INTO schedule_item(group_id, teacher_id, subject_id, [date], [position], [type]) values (@group_id, @teacher_id, @subject_id, @date, @position, @type);
+
+	RETURN SCOPE_IDENTITY();
+END;
 ```

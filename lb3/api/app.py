@@ -1,8 +1,10 @@
 from datetime import date, timedelta
 
+import pyodbc
 from aioodbc import Cursor
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from pyodbc import ProgrammingError
 
 from ..dependencies import DbConnectionDep, GroupMustExistDep, SubjectMustExistDep, TeacherMustExistDep
 
@@ -21,6 +23,15 @@ class CreateSubjectBody(BaseModel):
 class CreateTeacherBody(BaseModel):
     first_name: str
     last_name: str
+
+
+class CreateScheduleItemBody(BaseModel):
+    group_id: int
+    teacher_id: int
+    subject_id: int
+    date: date
+    position: int
+    type: str
 
 
 @router.get("/groups")
@@ -80,7 +91,6 @@ async def edit_group(group_id: int, data: CreateGroupBody, conn=DbConnectionDep)
     }
 
 
-# TODO: add learning hours per week/month calculation (as function?)
 @router.get("/groups/{group_id}/schedule", dependencies=[GroupMustExistDep])
 async def get_group_schedule_for_current_month(group_id: int, conn=DbConnectionDep):
     result = []
@@ -247,4 +257,25 @@ async def edit_teacher(teacher_id: int, data: CreateTeacherBody, conn=DbConnecti
         "first_name": data.first_name,
         "last_name": data.last_name,
         "info": row[0],
+    }
+
+
+@router.post("/schedule")
+async def create_schedule_item(data: CreateScheduleItemBody, conn=DbConnectionDep):
+    cur: Cursor
+    async with conn.cursor() as cur:
+        try:
+            await cur.execute(
+                "SET NOCOUNT ON; DECLARE @RC int; EXEC @RC = create_schedule_item ?, ?, ?, ?, ?, ?; SELECT @RC AS rc;",
+                data.group_id, data.teacher_id, data.subject_id, data.date, data.position, data.type
+            )
+        except ProgrammingError as e:
+            code, message = e.args
+            if code == "42000" and "(50001)" in message:
+                raise HTTPException(400, "The schedule with this parameters already exist.")
+            raise HTTPException(500, f"Unknown error: {message}")
+        row_id = await cur.fetchval()
+
+    return {
+        "id": row_id,
     }
