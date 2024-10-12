@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 
 from aioodbc import Cursor
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 from ..dependencies import DbConnectionDep, GroupMustExistDep, SubjectMustExistDep, TeacherMustExistDep
@@ -85,20 +85,12 @@ async def edit_group(group_id: int, data: CreateGroupBody, conn=DbConnectionDep)
 async def get_group_schedule_for_current_month(group_id: int, conn=DbConnectionDep):
     result = []
 
-    # TODO: replace with procedure or view that returns schedule for current month instead of calculating date here
-    from_date = date.today().replace(day=1)
-    to_date = (date.today().replace(day=28) + timedelta(days=4)).replace(day=1) + timedelta(days=-1)
-
     cur: Cursor
     async with conn.cursor() as cur:
         await cur.execute(
-            "SELECT si.id, si.teacher_id, t.first_name, t.last_name, si.subject_id, sj.name, sj.short_name, "
-            "si.[date], si.position, si.[type] "
-            "FROM schedule_item si "
-            "INNER JOIN teacher t ON t.id = si.teacher_id "
-            "INNER JOIN subject sj ON sj.id = si.subject_id "
-            "WHERE group_id=? AND date >= ? AND date <= ? ORDER BY [date];",
-            group_id, from_date, to_date
+            "SELECT schedule_item_id, teacher_id, teacher_first_name, teacher_last_name, subject_id, subject_name, "
+            "subject_short_name, [date], [position], [type] FROM get_group_schedule_for_current_month(?);",
+            (group_id,)
         )
         while (row := await cur.fetchone()) is not None:
             schedule_item_id, teacher_id, teacher_first_name, teacher_last_name, subject_id, subject_name, \
