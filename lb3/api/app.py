@@ -98,7 +98,7 @@ async def edit_group(group_id: int, data: CreateGroupBody, conn=DbConnectionDep)
 @router.delete("/groups/{group_id}", dependencies=[GroupMustExistDep], status_code=204)
 async def delete_group(group_id: int, conn=DbConnectionDep):
     async with conn.cursor() as cur:
-        await cur.execute("DELETE FROM group WHERE id=?;", group_id)
+        await cur.execute("DELETE FROM [group] WHERE id=?;", group_id)
 
 
 @router.get("/groups/{group_id}/schedule", dependencies=[GroupMustExistDep])
