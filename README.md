@@ -71,7 +71,7 @@ BEGIN
     INSERT INTO @ret(schedule_item_id, teacher_id, teacher_first_name, teacher_last_name, subject_id, subject_name, subject_short_name, [date], [position], [type], start_time)
     SELECT 
     	si.id, si.teacher_id, t.first_name, t.last_name, si.subject_id, sj.name, sj.short_name, si.[date], si.[position], si.[type],
-    	dbo.get_start_time_from_date_and_position(CAST(GETDATE() AS DATE), 5) AS start_time
+    	dbo.get_start_time_from_date_and_position([date], [position]) AS start_time
     FROM schedule_item si
     INNER JOIN teacher t ON t.id = si.teacher_id
     INNER JOIN subject sj ON sj.id = si.subject_id

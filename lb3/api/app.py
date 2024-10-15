@@ -305,7 +305,7 @@ async def create_schedule_item(data: CreateScheduleItemBody, conn=DbConnectionDe
         except ProgrammingError as e:
             code, message = e.args
             if code == "42000" and "(50001)" in message:
-                raise HTTPException(400, "The schedule with this parameters already exist.")
+                raise HTTPException(400, message)
             raise HTTPException(500, f"Unknown error: {message}")
         row_id = await cur.fetchval()
 
