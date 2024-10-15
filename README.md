@@ -1,3 +1,42 @@
+### Tables
+```tsql
+DROP TABLE IF EXISTS [group];
+CREATE TABLE [group] (
+	id INT PRIMARY KEY IDENTITY(1, 1),
+	name VARCHAR(128) NOT NULL UNIQUE
+);
+
+DROP TABLE IF EXISTS subject;
+CREATE TABLE subject (
+	id INT PRIMARY KEY IDENTITY(1, 1),
+	name VARCHAR(128) NOT NULL,
+	short_name VARCHAR(24) NOT NULL
+);
+
+DROP TABLE IF EXISTS teacher;
+CREATE TABLE teacher (
+	id INT PRIMARY KEY IDENTITY(1, 1),
+	first_name VARCHAR(128) NOT NULL,
+	last_name VARCHAR(128) NOT NULL,
+	info VARCHAR(255) DEFAULT NULL
+);
+
+DROP TABLE IF EXISTS schedule_item;
+CREATE TABLE schedule_item (
+	id INT PRIMARY KEY IDENTITY(1, 1),
+	group_id INT NOT NULL,
+	teacher_id INT NOT NULL,
+	subject_id INT NOT NULL,
+	[date] DATE DEFAULT GETDATE(),
+	position SMALLINT NOT NULL,
+	type VARCHAR(16) NOT NULL DEFAULT 'lecture',
+	FOREIGN KEY (group_id) REFERENCES [group](id) ON DELETE CASCADE,
+	FOREIGN KEY (teacher_id) REFERENCES teacher(id) ON DELETE CASCADE,
+	FOREIGN KEY (subject_id) REFERENCES subject(id) ON DELETE CASCADE
+);
+```
+
+### Scalar function
 ```tsql
 DROP FUNCTION IF EXISTS dbo.get_start_time_from_date_and_position;
 CREATE OR ALTER FUNCTION dbo.get_start_time_from_date_and_position (@date DATE, @position TINYINT) RETURNS DATETIME
@@ -9,6 +48,7 @@ BEGIN
 END;
 ```
 
+### Table function
 ```tsql
 DROP FUNCTION IF EXISTS get_group_schedule_for_current_month;
 CREATE OR ALTER FUNCTION get_group_schedule_for_current_month (@group_id BIGINT) RETURNS @ret TABLE (
@@ -41,6 +81,7 @@ BEGIN
 END
 ```
 
+### Procedure
 ```tsql
 DROP PROCEDURE IF EXISTS create_schedule_item;
 CREATE PROCEDURE create_schedule_item 
