@@ -95,6 +95,12 @@ async def edit_group(group_id: int, data: CreateGroupBody, conn=DbConnectionDep)
     }
 
 
+@router.delete("/groups/{group_id}", dependencies=[GroupMustExistDep], status_code=204)
+async def delete_group(group_id: int, conn=DbConnectionDep):
+    async with conn.cursor() as cur:
+        await cur.execute("DELETE FROM group WHERE id=?;", group_id)
+
+
 @router.get("/groups/{group_id}/schedule", dependencies=[GroupMustExistDep])
 async def get_group_schedule_for_current_month(group_id: int, conn=DbConnectionDep):
     result = []
@@ -103,12 +109,12 @@ async def get_group_schedule_for_current_month(group_id: int, conn=DbConnectionD
     async with conn.cursor() as cur:
         await cur.execute(
             "SELECT schedule_item_id, teacher_id, teacher_first_name, teacher_last_name, subject_id, subject_name, "
-            "subject_short_name, [date], [position], [type] FROM get_group_schedule_for_current_month(?);",
+            "subject_short_name, [date], [position], [type], start_time FROM get_group_schedule_for_current_month(?);",
             (group_id,)
         )
         while (row := await cur.fetchone()) is not None:
             schedule_item_id, teacher_id, teacher_first_name, teacher_last_name, subject_id, subject_name, \
-                subject_short_name, date_, position, type_ = row
+                subject_short_name, date_, position, type_, start_time = row
             result.append({
                 "id": schedule_item_id,
                 "teacher": {
@@ -122,6 +128,7 @@ async def get_group_schedule_for_current_month(group_id: int, conn=DbConnectionD
                     "short_name": subject_short_name,
                 },
                 "date": date_.isoformat(),
+                "start_time": start_time.isoformat(),
                 "position": position,
                 "type": type_,
             })
@@ -195,6 +202,12 @@ async def edit_subject(subject_id: int, data: CreateSubjectBody, conn=DbConnecti
         "name": data.name,
         "short_name": data.short_name,
     }
+
+
+@router.delete("/subjects/{subject_id}", dependencies=[SubjectMustExistDep], status_code=204)
+async def delete_subject(subject_id: int, conn=DbConnectionDep):
+    async with conn.cursor() as cur:
+        await cur.execute("DELETE FROM subject WHERE id=?;", subject_id)
 
 
 @router.get("/teachers")
@@ -274,6 +287,12 @@ async def edit_teacher(teacher_id: int, data: CreateTeacherBody, conn=DbConnecti
     }
 
 
+@router.delete("/teachers/{teacher_id}", dependencies=[TeacherMustExistDep], status_code=204)
+async def delete_teacher(teacher_id: int, conn=DbConnectionDep):
+    async with conn.cursor() as cur:
+        await cur.execute("DELETE FROM teacher WHERE id=?;", teacher_id)
+
+
 @router.post("/schedule")
 async def create_schedule_item(data: CreateScheduleItemBody, conn=DbConnectionDep):
     cur: Cursor
@@ -311,12 +330,12 @@ async def get_schedule(conn=DbConnectionDep, offset: int = 0, limit: int = 25):
             "INNER JOIN [group] grp ON si.group_id = grp.id "
             "INNER JOIN teacher tc ON si.teacher_id = tc.id "
             "INNER JOIN subject sb ON si.subject_id = sb.id "
-            "ORDER BY si.id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY;;",
+            "ORDER BY si.id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY;",
             (offset, limit,)
         )
         while (row := await cur.fetchone()) is not None:
-            schedule_item_id, group_id, group_name, teacher_id, teacher_first_name, teacher_last_name, subject_id, subject_name, \
-                subject_short_name, date_, position, type_ = row
+            schedule_item_id, group_id, group_name, teacher_id, teacher_first_name, teacher_last_name, subject_id,\
+                subject_name, subject_short_name, date_, position, type_ = row
             result.append({
                 "id": schedule_item_id,
                 "teacher": {
@@ -342,3 +361,9 @@ async def get_schedule(conn=DbConnectionDep, offset: int = 0, limit: int = 25):
         "count": count,
         "results": result,
     }
+
+
+@router.delete("/schedule/{schedule_item_id}", status_code=204)
+async def delete_schedule_item(schedule_item_id: int, conn=DbConnectionDep):
+    async with conn.cursor() as cur:
+        await cur.execute("DELETE FROM schedule_item WHERE id=?;", schedule_item_id)
